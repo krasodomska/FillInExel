@@ -42,11 +42,13 @@ public class Mechanics {
         return days;
     }
 
-    public static ArrayList<Day> workDays(int enumMonth, int workToDayOfMont) {
+    public static ArrayList<Day> workDays(int enumMonth, int workToDayOfMont, int year) {
         ArrayList<Day> days = new ArrayList<>();
         Calendar cal = Calendar.getInstance();
+        cal.set(Calendar.YEAR, year);
         cal.set(Calendar.MONTH, enumMonth);
         cal.set(Calendar.DAY_OF_MONTH, 1);
+
         SimpleDateFormat dateFormat = new SimpleDateFormat("EEEE, MMMM dd, yyyy");
         for (int i = 1; i <= workToDayOfMont; i++) {
             cal.set(Calendar.DAY_OF_MONTH, i);

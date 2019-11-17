@@ -2,8 +2,10 @@ import java.io.IOException;
 
 public class Main {
     public static void main(String[] args) throws IOException {
-        CreateExcel.createFile(
-                "sierpniu",
-                7);
+
+//
+//        CreateExcel.createFile(
+//                "wrzesieniu",
+//                8, 2018, 22);
     }
 }

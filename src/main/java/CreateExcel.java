@@ -6,42 +6,62 @@ import org.apache.poi.ss.util.CellRangeAddress;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
+import java.util.Calendar;
 
 public class CreateExcel {
 
-    static String fileName = "Rachunek, Agnieszka Krasodomska, sierpień";
-    static String sheetName = "Sierpień";
+    static String fileName;
+    static String sheetName;
     static FileOutputStream fileOut;
     static int rowGap = 2;
+    static HSSFWorkbook workbook;
+    static HSSFSheet sheet;
+    //set Style
+    static CellStyle boldStyle;
+    static CellStyle borderStyle;
 
-    static {
+
+
+    public CreateExcel() throws IOException {
+
+    }
+
+    public static void createFile(String inMonth, int enumMonth, int year, int workToDay) throws IOException {
+        String month = createNameOfMonth(enumMonth);
+        fileName = String.format("Rachunek, Agnieszka Mucha, %s", month);
+        sheetName = month;
+        int startRow = 7;
+        setBaseSettings();
+        createHeader(inMonth, year);
+        createColumnName(startRow);
+        startRow = createContent(startRow, enumMonth, workToDay, year);
+        underlineUnderContent(startRow);
+        createFooter(startRow);
+        autoSizeColumnAndSaveInFile();
+    }
+
+    private static void setBaseSettings() {
         try {
             fileOut = new FileOutputStream(fileName + ".xls");
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         }
+        workbook = new HSSFWorkbook();
+        sheet = workbook.createSheet(sheetName);
+        //set Style
+        boldStyle = createStyle(false);
+        borderStyle = createStyle(true);
     }
 
-    static HSSFWorkbook workbook = new HSSFWorkbook();
-    static HSSFSheet sheet = workbook.createSheet(sheetName);
-    //set Style
-    static CellStyle boldStyle = createStyle(false);
-    static CellStyle borderStyle = createStyle(true);
+    private static String createNameOfMonth(int enumMonth){
+        Calendar cal = Calendar.getInstance();
+        cal.set(Calendar.MONTH, enumMonth);
+        cal.set(Calendar.DAY_OF_MONTH, 1);
 
-    public CreateExcel() throws FileNotFoundException {
-    }
-
-    public static void createFile(String month, int enumMonth) throws IOException {
-
-        int startRow = 7;
-
-        createHeader(month);
-        createColumnName(startRow);
-        startRow = createContent(startRow, enumMonth);
-        underlineUnderContent(startRow);
-        createFooter(startRow);
-        autoSizeColumnAndSaveInFile();
+        SimpleDateFormat dateFormatForTest = new SimpleDateFormat("MMMM");
+        return  dateFormatForTest.format(cal.getTime());
     }
 
     static void createCell(int column, int row, String content, CellStyle style) {
@@ -81,53 +101,54 @@ public class CreateExcel {
         return row + startRow + rowGap;
     }
 
-    static CellStyle createStyle(boolean border){
+    static CellStyle createStyle(boolean border) {
         CellStyle style = workbook.createCellStyle();
         Font font = workbook.createFont();
         style.setAlignment(CellStyle.ALIGN_CENTER);
         font.setBold(true);
         style.setFont(font);
-        if(border){
+        if (border) {
             style.setBorderBottom(HSSFCellStyle.BORDER_MEDIUM);
         }
         return style;
     }
 
-    static void createHeader(String month){
-        createCell(1, 1, "Agnieszka Krasodomska", boldStyle);
-        createCell(1, 2, "Liczba godzin przepracowana w " + month + " 2019r.", boldStyle);
+    static void createHeader(String month, int year) {
+        createCell(1, 1, "Agnieszka Mucha", boldStyle);
+        createCell(1,2,String.format("Liczba godzin przepracowana w %s %dr.", month, year), boldStyle);
+        //createCell(1, 2, "Liczba godzin przepracowana w " + month + " 2019r.", boldStyle);
 
         sheet.addMergedRegion(new CellRangeAddress(1, 1, 1, 3));
         sheet.addMergedRegion(new CellRangeAddress(2, 2, 1, 3));
     }
 
-    static void createColumnName(int startRow){
+    static void createColumnName(int startRow) {
         createCell(1, startRow, "data", borderStyle);
         createCell(2, startRow, "liczba godzin", borderStyle);
         createCell(3, startRow, "opis", borderStyle);
     }
 
-    static int createContent(int startRow, int enumMonth){
+    static int createContent(int startRow, int enumMonth, int workToDay, int year) {
         startRow += rowGap;
         for (Day day : Mechanics
-                .dayWithHourAndTask(Mechanics.hoursPerDay(80), Mechanics.myWorks(), Mechanics.workDays(enumMonth))) {
+                .dayWithHourAndTask(Mechanics.hoursPerDay(80), Mechanics.myWorks(), Mechanics.workDays(enumMonth,  workToDay, year))) {
             startRow = writeDay(1, startRow, day, boldStyle);
         }
         return startRow;
     }
 
-    static void underlineUnderContent(int startRow){
+    static void underlineUnderContent(int startRow) {
         startRow -= rowGap;
         for (Integer column : Arrays.asList(1, 2, 3)) createCell(column, startRow, "", borderStyle);
     }
 
-    static void createFooter(int startRow){
+    static void createFooter(int startRow) {
         createCell(1, startRow, "razem", boldStyle);
         createSumOfWorkingHour(startRow);
         createCell(3, startRow, "godzin", boldStyle);
     }
 
-    static void createSumOfWorkingHour(int startRow){
+    static void createSumOfWorkingHour(int startRow) {
         HSSFRow rowSum = (sheet.getRow(startRow) == null) ? sheet.createRow((short) startRow) : sheet.getRow(startRow);
         HSSFCell sumCell = rowSum.createCell(2);
         String strFormula = "SUM(C1:C" + --startRow + ")";
